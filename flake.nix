@@ -14,7 +14,15 @@
       packages = forAllSystems (
         system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            inherit system;
+
+            config.allowUnfreePredicate =
+              pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "brotracker-portal"
+              ];
+          };
         in
         {
           brotracker-portal = pkgs.callPackage ./pkgs/brotracker-portal { };
