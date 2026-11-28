@@ -9,10 +9,10 @@
 
 let
   pname = "brotracker-portal";
-  version = "0.1.14";
+  version = "0.1.16";
 
   src = fetchurl {
-    url = "https://brotracker-prod.blr1.digitaloceanspaces.com/portal/BroTracker-${version}.AppImage";
+    url = "./BroTracker-0.1.16.AppImage";
     hash = "sha256-WUUL48uS5nbdSc/0cDva4tO1gKWLQCBTXkmPJTvw9Fg=";
   };
 
