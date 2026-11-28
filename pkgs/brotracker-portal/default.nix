@@ -1,174 +1,200 @@
 {
-  description = "Nix Flake for BroTracker";
+  lib,
+  stdenv,
+  fetchurl,
+  dpkg,
+  autoPatchelfHook,
+  makeWrapper,
+  wrapGAppsHook3,
+  gobject-introspection,
+  copyDesktopItems,
+  makeDesktopItem,
+  xdg-utils,
+  cairo,
+  libX11,
+  libXcomposite,
+  libXdamage,
+  libXext,
+  libXfixes,
+  libXrandr,
+  mesa,
+  expat,
+  libxcb,
+  libxkbcommon,
+  alsa-lib,
+  vulkan-loader,
+  libGL,
+  nss,
+  nspr,
+  dbus,
+  atk,
+  at-spi2-atk,
+  at-spi2-core,
+  cups,
+  gtk3,
+  pango,
+  systemd,
+  glib,
+  gsettings-desktop-schemas,
+  gst_all_1,
+  pipewire,
+  python3Packages,
+  libnotify,
+  libsecret,
+  libpulseaudio,
+  xdg-desktop-portal,
+}:
+let
+  version = "0.1.16";
+in
+stdenv.mkDerivation (finalAttrs: {
+  pname = "brotracker";
+  inherit version;
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  src = fetchurl {
+    url = "https://brotracker-prod.blr1.digitaloceanspaces.com/portal/brotracker-portal_${version}_amd64.deb";
+    hash = "sha256-Bz4S3LTwNqZqKzQqacW7Dscvrr+iINwH9juU/jzz2Wk=";
   };
 
-  outputs =
-    { self, nixpkgs }:
-    let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
-      inherit (pkgs) lib;
-      version = "0.1.16";
-    in
-    {
-      packages.${system}.default = pkgs.stdenv.mkDerivation (finalAttrs: {
-        pname = "brotracker";
-        inherit version;
+  nativeBuildInputs = [
+    dpkg
+    autoPatchelfHook
+    makeWrapper
+    wrapGAppsHook3
+    gobject-introspection
+    copyDesktopItems
+  ];
 
-        src = pkgs.fetchurl {
-          url = "https://brotracker-prod.blr1.digitaloceanspaces.com/portal/brotracker-portal_${version}_amd64.deb";
-          hash = "sha256-Bz4S3LTwNqZqKzQqacW7Dscvrr+iINwH9juU/jzz2Wk=";
-        };
+  buildInputs = [
+    stdenv.cc.cc.lib
+    cairo
+    libX11
+    libXcomposite
+    libXdamage
+    libXext
+    libXfixes
+    libXrandr
+    mesa
+    expat
+    libxcb
+    libxkbcommon
+    alsa-lib
+    vulkan-loader
+    libGL
+    nss
+    nspr
+    dbus
+    atk
+    at-spi2-atk
+    at-spi2-core
+    cups
+    gtk3
+    pango
+    systemd
+    glib
+    gsettings-desktop-schemas
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
+    pipewire
+    python3Packages.pyopengl
+  ];
 
-        nativeBuildInputs = with pkgs; [
-          dpkg
-          autoPatchelfHook
-          makeWrapper
-          wrapGAppsHook3
-          gobject-introspection
-          copyDesktopItems
-        ];
+  runtimeDependencies = [
+    systemd
+    vulkan-loader
+    xdg-desktop-portal
+    libGL
+    libnotify
+    libsecret
+    libpulseaudio
+    pipewire
+  ];
 
-        buildInputs = with pkgs; [
-          stdenv.cc.cc.lib
-          cairo
-          libX11
-          libXcomposite
-          libXdamage
-          libXext
-          libXfixes
-          libXrandr
-          mesa
-          expat
-          libxcb
-          libxkbcommon
-          alsa-lib
-          vulkan-loader
-          libGL
-          nss
-          nspr
-          dbus
-          atk
-          at-spi2-atk
-          at-spi2-core
-          cups
-          gtk3
-          pango
-          systemd
-          glib
-          gsettings-desktop-schemas
-          gst_all_1.gstreamer
-          gst_all_1.gst-plugins-base
-          gst_all_1.gst-plugins-good
-          pipewire
-          python3Packages.pyopengl
-        ];
+  dontConfigure = true;
+  dontBuild = true;
+  dontStrip = true;
 
-        runtimeDependencies = with pkgs; [
-          systemd
-          vulkan-loader
-          xdg-desktop-portal
-          libGL
-          libnotify
-          libsecret
-          libpulseaudio
-          pipewire
-        ];
+  # We build the wrapper ourselves in preFixup.
+  dontWrapGApps = true;
 
-        dontConfigure = true;
-        dontBuild = true;
-        dontStrip = true;
+  desktopItems = [
+    (makeDesktopItem {
+      name = "brotracker-portal";
+      desktopName = "BroTracker";
+      exec = "brotracker %U";
+      icon = "brotracker-portal";
+      comment = "Desktop tracking and telemetry client for Brototype students and staff.";
+      categories = [ "Utility" ];
+      startupWMClass = "BroTracker";
+      terminal = false;
+    })
+  ];
 
-        # We build the wrapper ourselves in preFixup.
-        dontWrapGApps = true;
+  unpackPhase = ''
+    runHook preUnpack
+    dpkg-deb -x "$src" .
+    runHook postUnpack
+  '';
 
-        desktopItems = [
-          (pkgs.makeDesktopItem {
-            name = "brotracker-portal";
-            desktopName = "BroTracker";
-            exec = "brotracker %U";
-            icon = "brotracker-portal";
-            comment = "Desktop tracking and telemetry client for Brototype students and staff.";
-            categories = [ "Utility" ];
-            startupWMClass = "BroTracker";
-            terminal = false;
-          })
-        ];
+  installPhase = ''
+    runHook preInstall
 
-        unpackPhase = ''
-          runHook preUnpack
-          dpkg-deb -x "$src" .
-          runHook postUnpack
-        '';
+    mkdir -p "$out/bin" "$out/opt" "$out/share"
 
-        installPhase = ''
-          runHook preInstall
+    if [ -d opt ]; then
+      cp -r opt/. "$out/opt/"
+    fi
 
-          mkdir -p "$out/bin" "$out/opt" "$out/share"
+    if [ -d usr/share ]; then
+      cp -r usr/share/. "$out/share/"
+    fi
 
-          if [ -d opt ]; then
-            cp -r opt/. "$out/opt/"
-          fi
+    # Remove the Debian package's desktop entries.
+    if [ -d "$out/share/applications" ]; then
+      rm -f "$out"/share/applications/*.desktop
+    fi
 
-          if [ -d usr/share ]; then
-            cp -r usr/share/. "$out/share/"
-          fi
+    mkdir -p "$out/share/applications"
 
-          # Remove the Debian package's desktop entries.
-          if [ -d "$out/share/applications" ]; then
-            rm -f "$out"/share/applications/*.desktop
-          fi
+    # Install the custom BroTracker icon.
+    install -Dm644 ${./brotracker.png} \
+      "$out/share/icons/hicolor/256x256/apps/brotracker-portal.png"
 
-          mkdir -p "$out/share/applications"
+    runHook postInstall
+  '';
 
-          # Install the custom BroTracker icon.
-          install -Dm644 ${./brotracker.png} \
-            "$out/share/icons/hicolor/256x256/apps/brotracker-portal.png"
+  preFixup = ''
+    BINARY_PATH=$(
+      find "$out/opt" -type f -executable \
+        ! -name '*.so*' \
+        ! -name 'chrome-sandbox' \
+        ! -name 'chrome_crashpad_handler' \
+        -printf '%s\t%p\n' |
+        sort -rn |
+        head -n 1 |
+        cut -f2-
+    )
 
-          runHook postInstall
-        '';
+    if [ -z "$BINARY_PATH" ]; then
+      echo "Error: Could not find the main executable under opt/"
+      exit 1
+    fi
 
-        preFixup = ''
-          BINARY_PATH=$(
-            find "$out/opt" -type f -executable \
-              ! -name '*.so*' \
-              ! -name 'chrome-sandbox' \
-              ! -name 'chrome_crashpad_handler' \
-              -printf '%s\t%p\n' |
-              sort -rn |
-              head -n 1 |
-              cut -f2-
-          )
+    echo "Wrapping main binary: $BINARY_PATH"
 
-          if [ -z "$BINARY_PATH" ]; then
-            echo "Error: Could not find the main executable under opt/"
-            exit 1
-          fi
+    makeWrapper "$BINARY_PATH" "$out/bin/brotracker" \
+      "''${gappsWrapperArgs[@]}" \
+      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
+      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath finalAttrs.runtimeDependencies}" \
+      --prefix PATH : "${lib.makeBinPath [ xdg-utils ]}"
+  '';
 
-          echo "Wrapping main binary: $BINARY_PATH"
-
-          makeWrapper "$BINARY_PATH" "$out/bin/brotracker" \
-            "''${gappsWrapperArgs[@]}" \
-            --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
-            --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath finalAttrs.runtimeDependencies}" \
-            --prefix PATH : "${lib.makeBinPath [ pkgs.xdg-utils ]}"
-        '';
-
-        meta = {
-          description = "BroTracker desktop application";
-          platforms = [ "x86_64-linux" ];
-          license = lib.licenses.unfree;
-          mainProgram = "brotracker";
-          sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-        };
-      });
-
-      apps.${system}.default = {
-        type = "app";
-        program = lib.getExe self.packages.${system}.default;
-      };
-    };
-}
+  meta = {
+    description = "BroTracker desktop application";
+    platforms = [ "x86_64-linux" ];
+    license = lib.licenses.unfree;
+    mainProgram = "brotracker";
+    sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
+  };
+})

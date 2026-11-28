@@ -7,7 +7,6 @@
     { self, nixpkgs }:
     let
       systems = [ "x86_64-linux" ];
-
       forAllSystems = nixpkgs.lib.genAttrs systems;
     in
     {
@@ -20,12 +19,15 @@
             config.allowUnfreePredicate =
               pkg:
               builtins.elem (nixpkgs.lib.getName pkg) [
-                "brotracker-portal"
+                "brotracker"
               ];
           };
+
+          brotracker-portal = pkgs.callPackage ./pkgs/brotracker-portal { };
         in
         {
-          brotracker-portal = pkgs.callPackage ./pkgs/brotracker-portal { };
+          inherit brotracker-portal;
+          default = brotracker-portal;
         }
       );
 
