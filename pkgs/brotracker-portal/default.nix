@@ -12,7 +12,7 @@ let
   version = "0.1.16";
 
   src = fetchurl {
-    url = "./BroTracker-0.1.16.AppImage";
+    url = "https://brotracker-prod.blr1.digitaloceanspaces.com/portal/BroTracker-${version}.AppImage";
     hash = "sha256-WUUL48uS5nbdSc/0cDva4tO1gKWLQCBTXkmPJTvw9Fg=";
   };
 
