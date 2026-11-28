@@ -53,7 +53,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "https://brotracker-prod.blr1.digitaloceanspaces.com/portal/brotracker-portal_${version}_amd64.deb";
-    hash = "sha256-Bz4S3LTwNqZqKzQqacW7Dscvrr+iINwH9juU/jzz2Wk=";
+    hash = "sha256-i6wzg0WVc13EmxDBRxkthy4G2LZnHAf14MRcB5XY7Vg=";
   };
 
   nativeBuildInputs = [
